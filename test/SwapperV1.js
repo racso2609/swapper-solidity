@@ -1,14 +1,8 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
 const { printGas } = require("../utils/transactions");
-const {
-	DAI_ADDRESS,
-	balanceOf,
-	impersonateTokens,
-} = require("../utils/tokens");
+const { DAI_ADDRESS, balanceOf, ALBT_ADDRESS } = require("../utils/tokens");
 const UNISWAP = process.env.UNISWAP;
-// const { UNISWAP_ABI } = require("../utils/uniswap");
-// const WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
 describe("Swapper v1", () => {
 	beforeEach(async () => {
@@ -16,11 +10,6 @@ describe("Swapper v1", () => {
 		await fixture(["V1"]);
 		swapperV1 = await ethers.getContract("SwapperV1");
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
-		// uniswap = new ethers.Contract(
-		// UNISWAP,
-		// UNISWAP_ABI,
-		// feeRecipientSigner.provider
-		// );
 	});
 
 	describe("basic config", () => {
@@ -30,23 +19,17 @@ describe("Swapper v1", () => {
 		});
 	});
 	describe("swap eth for tokens", async () => {
-		beforeEach(async () => {
-			// impersonate WETH9
-			await impersonateTokens({
-				fundAddress: deployer,
-				impersonateAddress: "0x2feb1512183545f48f6b9c5b4ebfcaf49cfca6f3",
-				tokenAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-				amount: ethers.utils.parseEther("1"),
-			});
-		});
 		it("swap ether for dai faail", async () => {
-			await expect(swapperV1.swap(DAI_ADDRESS)).to.be.revertedWith(
-				"Must pass non 0 ETH amount"
+			await expect(swapperV1.singleSwap(DAI_ADDRESS)).to.be.revertedWith(
+				"You must pass 100 eth at least!"
 			);
 		});
 
 		it("swap ether for dai", async () => {
-			const tx = await swapperV1.swap(DAI_ADDRESS, {
+			const recipientPreBalance = await feeRecipientSigner.provider.getBalance(
+				feeRecipient
+			);
+			const tx = await swapperV1.singleSwap(DAI_ADDRESS, {
 				value: ethers.utils.parseEther("1"),
 			});
 			await printGas(tx);
@@ -55,7 +38,51 @@ describe("Swapper v1", () => {
 				userAddress: deployer,
 			});
 
+			const recipientPostBalance = await feeRecipientSigner.provider.getBalance(
+				feeRecipient
+			);
+
 			expect(balance).to.be.gt(0);
+			expect(recipientPostBalance).to.be.gt(recipientPreBalance);
+		});
+	});
+	describe("multi swap", () => {
+		it("fail especify distribution to each token", async () => {
+			await expect(
+				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50])
+			).to.be.revertedWith("Please supply the distribution to each coin!");
+		});
+		it("fail distribution is not 100%", async () => {
+			await expect(
+				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50, 10])
+			).to.be.revertedWith("Incorrect distribution!");
+		});
+
+		it("fail no enought eth", async () => {
+			await expect(
+				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50, 50])
+			).to.be.revertedWith("You must pass 100 eth at least!");
+		});
+
+		it("multi swap", async () => {
+			const tx = await swapperV1.multiSwap(
+				[DAI_ADDRESS, ALBT_ADDRESS],
+				[50, 50],
+				{ value: ethers.utils.parseEther("1") }
+			);
+			await printGas(tx);
+
+			const ALBBalance = await balanceOf({
+				tokenAddress: ALBT_ADDRESS,
+				userAddress: deployer,
+			});
+
+			const DAIBalance = await balanceOf({
+				tokenAddress: DAI_ADDRESS,
+				userAddress: deployer,
+			});
+			expect(ALBBalance).to.be.gt(0);
+			expect(DAIBalance).to.be.gt(0);
 		});
 	});
 });

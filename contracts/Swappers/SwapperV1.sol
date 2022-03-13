@@ -16,12 +16,30 @@ contract SwapperV1 is Initializable {
 	using SafeMath for uint256;
 
 	IUniswapV2Router02 public uniSwapRouter;
-	// For this example, we will set the pool fee to 0.1%.
 	uint24 public poolFee;
 	address public constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
 	uint256 constant deadline = 2 minutes;
 	address payable recipient;
+	modifier correctDistibution(
+		uint256[] memory _distribution,
+		uint24 _tokensLength
+	) {
+		require(
+			_distribution.length == _tokensLength,
+			"Please supply the distribution to each coin!"
+		);
+		uint256 aux;
+		for (uint24 i = 0; i < _distribution.length; i++) {
+			aux += _distribution[i];
+		}
+		require(aux == 100, "Incorrect distribution!");
+		_;
+	}
+	modifier correctEthValue() {
+		require(msg.value > 100, "You must pass 100 eth at least!");
+		_;
+	}
 
 	function initialize(
 		address _recipient,
@@ -41,24 +59,47 @@ contract SwapperV1 is Initializable {
 		return uniSwapRouter.getAmountsOut(_amount, _tokens)[1];
 	}
 
-	function swap(address _tokenOut) public payable {
-		require(msg.value > 0, "Must pass non 0 ETH amount");
+	function _calculateFee(uint256 _amount, uint256 _porcentage)
+		internal
+		returns (uint256)
+	{
+		return _amount.mul(_porcentage).div(100);
+	}
 
+	function _swap(address _tokenOut, uint256 _ethValue) internal {
 		address[] memory path = new address[](2);
 		path[0] = uniSwapRouter.WETH();
 		path[1] = _tokenOut;
 
-		uint256 tokensAmount = _getAmountsOut(path, msg.value);
+		uint256 tokensAmount = _getAmountsOut(path, _ethValue);
 
-		uniSwapRouter.swapExactETHForTokens{
-			value: msg.value.sub(msg.value.div(poolFee))
-		}(
-			tokensAmount.sub(tokensAmount.div(poolFee)),
+		uniSwapRouter.swapExactETHForTokens{ value: _ethValue }(
+			tokensAmount,
 			path,
 			msg.sender,
 			block.timestamp + deadline
 		);
+	}
 
-		recipient.transfer(msg.value.div(poolFee));
+	function singleSwap(address _tokenOut) public payable correctEthValue {
+		uint256 amountMinusFee = msg.value.sub(_calculateFee(msg.value, poolFee));
+
+		_swap(_tokenOut, amountMinusFee);
+
+		recipient.transfer(_calculateFee(msg.value, poolFee));
+	}
+
+	function multiSwap(
+		address[] memory _tokensOut,
+		uint256[] memory _distribution
+	)
+		external
+		payable
+		correctDistibution(_distribution, uint24(_tokensOut.length))
+		correctEthValue
+	{
+		for (uint24 i = 0; i < _tokensOut.length; i++) {
+			_swap(_tokensOut[i], _calculateFee(msg.value, _distribution[i]));
+		}
 	}
 }

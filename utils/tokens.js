@@ -326,4 +326,12 @@ async function impersonateTokens({
 }
 
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-module.exports = { DAI_ADDRESS, allowance, balanceOf, impersonateTokens };
+
+const ALBT_ADDRESS = "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0";
+module.exports = {
+	DAI_ADDRESS,
+	allowance,
+	balanceOf,
+	impersonateTokens,
+	ALBT_ADDRESS,
+};
