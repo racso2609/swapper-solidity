@@ -1,4 +1,6 @@
 const CONTRACT_NAME = "SwapperV1";
+const UNISWAP = process.env.UNISWAP;
+const POOLFEE = 1000;
 
 // modify when needed
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -12,7 +14,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 			execute: {
 				init: {
 					methodName: "initialize",
-					args: [feeRecipient],
+					args: [feeRecipient, UNISWAP, POOLFEE],
 				},
 			},
 		},

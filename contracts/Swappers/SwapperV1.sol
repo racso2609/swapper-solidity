@@ -23,11 +23,13 @@ contract SwapperV1 is Initializable {
 	uint256 constant deadline = 2 minutes;
 	address payable recipient;
 
-	function initialize(address _recipient) external initializer {
-		uniSwapRouter = IUniswapV2Router02(
-			0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-		);
-		poolFee = 1000;
+	function initialize(
+		address _recipient,
+		address _uniSwapRouter,
+		uint24 _poolFee
+	) external initializer {
+		uniSwapRouter = IUniswapV2Router02(_uniSwapRouter);
+		poolFee = _poolFee;
 		recipient = payable(_recipient);
 	}
 
