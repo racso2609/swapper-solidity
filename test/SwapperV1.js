@@ -17,6 +17,18 @@ describe("Swapper v1", () => {
 			const uniSwapRouterAddress = await swapperV1.uniSwapRouter();
 			expect(uniSwapRouterAddress).to.be.eq(UNISWAP);
 		});
+		it("change recipient fail not admin", async () => {
+			await expect(
+				swapperV1.connect(feeRecipientSigner).setRecipient(user)
+			).to.be.revertedWith("You are not an admin!");
+		});
+		it("change recipient ", async () => {
+			const tx = await swapperV1.setRecipient(user);
+			await printGas(tx);
+
+			const newRecipient = await swapperV1.recipient();
+			expect(newRecipient).to.be.eq(user);
+		});
 	});
 	describe("swap eth for tokens", async () => {
 		it("swap ether for dai faail", async () => {

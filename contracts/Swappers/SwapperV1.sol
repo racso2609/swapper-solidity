@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-
 pragma solidity =0.7.0;
-/* pragma abicoder v2; */
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-/* import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol"; */
 
-/* import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol"; */
-import "hardhat/console.sol";
+/* import "hardhat/console.sol"; */
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract SwapperV1 is Initializable {
+contract SwapperV1 is Initializable, AccessControlUpgradeable {
 	using SafeMath for uint256;
 
 	IUniswapV2Router02 public uniSwapRouter;
@@ -20,7 +17,7 @@ contract SwapperV1 is Initializable {
 	address public constant WETH9 = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
 	uint256 constant deadline = 2 minutes;
-	address payable recipient;
+	address payable public recipient;
 	modifier correctDistibution(
 		uint256[] memory _distribution,
 		uint24 _tokensLength
@@ -40,6 +37,10 @@ contract SwapperV1 is Initializable {
 		require(msg.value > 100, "You must pass 100 eth at least!");
 		_;
 	}
+	modifier onlyRole(bytes32 _role) {
+		require(hasRole(_role, msg.sender), "You are not an admin!");
+		_;
+	}
 
 	function initialize(
 		address _recipient,
@@ -49,6 +50,8 @@ contract SwapperV1 is Initializable {
 		uniSwapRouter = IUniswapV2Router02(_uniSwapRouter);
 		poolFee = _poolFee;
 		recipient = payable(_recipient);
+		__AccessControl_init();
+		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 	}
 
 	function _getAmountsOut(address[] memory _tokens, uint256 _amount)
@@ -101,5 +104,12 @@ contract SwapperV1 is Initializable {
 		for (uint24 i = 0; i < _tokensOut.length; i++) {
 			_swap(_tokensOut[i], _calculateFee(msg.value, _distribution[i]));
 		}
+	}
+
+	function setRecipient(address _recipient)
+		external
+		onlyRole(DEFAULT_ADMIN_ROLE)
+	{
+		recipient = payable(_recipient);
 	}
 }
