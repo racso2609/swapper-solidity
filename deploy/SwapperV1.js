@@ -1,7 +1,7 @@
 const CONTRACT_NAME = "SwapperV1";
 const UNISWAP = process.env.UNISWAP;
-// const POOLFEE = 1000;
-const POOLFEE = 1;
+// polFee is porcentage * 10**2
+const POOLFEE = 10;
 
 // modify when needed
 module.exports = async ({ getNamedAccounts, deployments }) => {

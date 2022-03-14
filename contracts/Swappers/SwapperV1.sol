@@ -66,7 +66,7 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		internal
 		returns (uint256)
 	{
-		return _amount.mul(_porcentage).div(100);
+		return _amount.mul(_porcentage).div(10000);
 	}
 
 	function _swap(address _tokenOut, uint256 _ethValue) internal {
