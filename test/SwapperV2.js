@@ -1,14 +1,16 @@
 const { expect } = require("chai");
-const { fixture } = deployments;
-const { printGas, impersonate } = require("../utils/transactions");
+// const { fixture } = deployments;
+const { printGas } = require("../utils/transactions");
 const { getTransactionData } = require("../utils/paraswap");
 const {
 	DAI_ADDRESS,
 	ETH_ADDRESS,
 	balanceOf,
-	ALBT_ADDRESS,
+	// ALBT_ADDRESS,
+	// AUGUST,
+	allowance,
+	UNISWAP,
 } = require("../utils/tokens");
-const UNISWAP = process.env.UNISWAP;
 
 const getTransactionMultipleData = async ({ totalAmount, distribution }) => {
 	const transactionsHashes = distribution.map((distribution) => {
@@ -23,8 +25,13 @@ const getTransactionMultipleData = async ({ totalAmount, distribution }) => {
 		});
 	});
 	const txs = await Promise.all(transactionsHashes);
+	const hashes = txs.map((tx) => tx.data.data);
+	let amount = ethers.BigNumber.from("0");
+	txs.forEach(
+		(tx) => (amount = amount.add(ethers.BigNumber.from(tx.priceData.srcAmount)))
+	);
 
-	return txs.map((tx) => tx.data.data);
+	return { hashes, totalAmount: amount };
 };
 
 describe("swapper v2", () => {
@@ -72,16 +79,20 @@ describe("swapper v2", () => {
 			expect(balance).to.be.gt(0);
 		});
 		it("multi swap", async () => {
-			const totalAmount = ethers.utils.parseEther("10");
+			const totalAmount = ethers.utils.parseEther("1");
 			const distribution = [50, 50];
-			const hashes = await getTransactionMultipleData({
+			const txInfo = await getTransactionMultipleData({
 				totalAmount,
 				distribution,
 			});
 
-			const tx = await swapperV2.smartMultipleSwap(hashes, distribution, {
-				value: totalAmount,
-			});
+			const tx = await swapperV2.smartMultipleSwap(
+				txInfo.hashes,
+				distribution,
+				{
+					value: txInfo.totalAmount,
+				}
+			);
 			await printGas(tx);
 
 			const balance = await balanceOf({

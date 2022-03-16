@@ -1,8 +1,13 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
 const { printGas } = require("../utils/transactions");
-const { DAI_ADDRESS, balanceOf, ALBT_ADDRESS } = require("../utils/tokens");
-const UNISWAP = process.env.UNISWAP;
+const {
+	DAI_ADDRESS,
+	balanceOf,
+	ALBT_ADDRESS,
+	AUGUST,
+	UNISWAP,
+} = require("../utils/tokens");
 
 describe("Swapper v1", () => {
 	beforeEach(async () => {
@@ -120,7 +125,8 @@ describe("Swapper v1", () => {
 			swapperV2 = await upgrades.upgradeProxy(swapperV1.address, SwapperV2);
 		});
 		it("august", async () => {
-			console.log(await swapperV2.augustSwapper());
+			console.log();
+			expect(await swapperV2.augustSwapper()).to.be.eq(AUGUST);
 		});
 	});
 });

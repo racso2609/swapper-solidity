@@ -1,5 +1,5 @@
 const CONTRACT_NAME = "SwapperV1";
-const UNISWAP = process.env.UNISWAP;
+const { UNISWAP } = require("../utils/tokens");
 // polFee is porcentage * 10**2
 const POOLFEE = 10;
 

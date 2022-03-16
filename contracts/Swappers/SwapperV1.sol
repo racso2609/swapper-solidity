@@ -43,6 +43,11 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		_;
 	}
 
+	/* @params _recipient address to tranfer tax
+		 @params _uniSwapRoute address of uniswap sm
+		 @params _pooFee fee percentage per tx with 2 decimals
+ */
+
 	function initialize(
 		address _recipient,
 		address _uniSwapRouter,
@@ -55,6 +60,10 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		_setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
 	}
 
+	/* @params _tokens the uniswap path of tokens  */
+	/* @params _amount amount of srcTokens */
+	/* @notice return a destination token amount  */
+
 	function _getAmountsOut(address[] memory _tokens, uint256 _amount)
 		internal
 		view
@@ -63,12 +72,21 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		return uniSwapRouter.getAmountsOut(_amount, _tokens)[1];
 	}
 
+	/* @params _porcentage the corresponding percentage  */
+	/* @params _amount total amount of srcTokens */
+	/* @notice return fee amount  */
+
 	function _calculateFee(uint256 _amount, uint256 _porcentage)
 		internal
 		returns (uint256)
 	{
 		return _amount.mul(_porcentage).div(10000);
 	}
+
+	/* @params _tokenOut destination token address */
+	/* @params _ethValue srcTokenQuantity */
+	/* @notice swap eth to _tokenOut */
+	/* @dev reuse this funciton to create a new swap method */
 
 	function _swap(address _tokenOut, uint256 _ethValue) internal {
 		address[] memory path = new address[](2);
@@ -87,6 +105,8 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		emit Swap(msg.sender, _ethValue);
 	}
 
+	/* @params _tokenOut destination token address */
+	/* @notice swap eth to a _tokenOut */
 	function singleSwap(address _tokenOut) public payable correctEthValue {
 		uint256 amountMinusFee = msg.value.sub(_calculateFee(msg.value, poolFee));
 
@@ -94,6 +114,10 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 
 		recipient.transfer(_calculateFee(msg.value, poolFee));
 	}
+
+	/* @params _tokenOut destination token address */
+	/* @params _distribution array of percentage of each token */
+	/* @notice swap eth to multiples  _tokenOut */
 
 	function multiSwap(
 		address[] memory _tokensOut,
@@ -108,6 +132,9 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 			_swap(_tokensOut[i], _calculateFee(msg.value, _distribution[i]));
 		}
 	}
+
+	/* @params _recipient destination token address */
+	/* @notice change recipient address*/
 
 	function setRecipient(address _recipient)
 		external

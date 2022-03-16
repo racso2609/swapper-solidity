@@ -329,6 +329,8 @@ const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
 const ALBT_ADDRESS = "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0";
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+const UNISWAP = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+const AUGUST = "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57";
 
 module.exports = {
 	DAI_ADDRESS,
@@ -337,4 +339,6 @@ module.exports = {
 	impersonateTokens,
 	ALBT_ADDRESS,
 	ETH_ADDRESS,
+	AUGUST,
+	UNISWAP,
 };
