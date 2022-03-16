@@ -19,3 +19,9 @@ exports.currentTime = async () => {
 	return timestamp;
 };
 exports.toDays = (amt) => 60 * 60 * 24 * amt;
+exports.impersonate = async (address) => {
+	await hre.network.provider.request({
+		method: "hardhat_impersonateAccount",
+		params: [address],
+	});
+};

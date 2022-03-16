@@ -10,6 +10,7 @@ require("hardhat-deploy");
 require("solidity-coverage");
 require("hardhat-gas-reporter");
 require("hardhat-deploy-ethers");
+require("@openzeppelin/hardhat-upgrades");
 require("chai");
 
 let mnemonic = process.env.MNEMONIC
@@ -61,6 +62,10 @@ module.exports = {
 			},
 			{
 				version: "0.7.0",
+				settings: {},
+			},
+			{
+				version: "0.7.5",
 				settings: {},
 			},
 		],
