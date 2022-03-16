@@ -36,11 +36,10 @@ async function getTransactionData({
 		});
 		priceData = priceData.data;
 		if (!priceData) throw new Error("No data");
-
 		const data = {
 			srcToken: fromToken,
 			destToken: toToken,
-			srcAmount: amount,
+			srcAmount: priceData.srcAmount,
 			destAmount: priceData.destAmount,
 			priceRoute: priceData,
 			userAddress: sender,
@@ -48,9 +47,8 @@ async function getTransactionData({
 			srcDecimals: priceData.srcDecimals,
 			destDecimals: priceData.destDecimals,
 		};
-		console.log(data);
 		const response = await axios.post(url, data);
-		return { data: response.data };
+		return { data: response.data, priceData: priceData };
 	} catch (err) {
 		return { error: err?.response?.data?.error || err.message };
 	}

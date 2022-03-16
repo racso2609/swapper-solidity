@@ -57,6 +57,16 @@ describe("Swapper v1", () => {
 			expect(balance).to.be.gt(0);
 			expect(recipientPostBalance).to.be.gt(recipientPreBalance);
 		});
+		it("swap event", async () => {
+			const value = ethers.utils.parseEther("1");
+			await expect(
+				swapperV1.singleSwap(DAI_ADDRESS, {
+					value,
+				})
+			)
+				.to.emit(swapperV1, "Swap")
+				.withArgs(deployer, value.sub((value * 0.1) / 100));
+		});
 	});
 	describe("multi swap", () => {
 		it("fail especify distribution to each token", async () => {
@@ -95,6 +105,22 @@ describe("Swapper v1", () => {
 			});
 			expect(ALBBalance).to.be.gt(0);
 			expect(DAIBalance).to.be.gt(0);
+		});
+	});
+	describe("upgrade", () => {
+		beforeEach(async () => {
+			const SwapperV2 = await ethers.getContractFactory("SwapperV2");
+			const SwapperV1 = await ethers.getContractFactory("SwapperV1");
+
+			swapperV1 = await upgrades.deployProxy(SwapperV1, [
+				feeRecipient,
+				UNISWAP,
+				10,
+			]);
+			swapperV2 = await upgrades.upgradeProxy(swapperV1.address, SwapperV2);
+		});
+		it("august", async () => {
+			console.log(await swapperV2.augustSwapper());
 		});
 	});
 });

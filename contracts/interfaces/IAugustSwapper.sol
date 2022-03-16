@@ -2,7 +2,7 @@
 pragma solidity =0.7.0;
 pragma experimental ABIEncoderV2;
 
-interface IAugustusSwapper {
+interface IAugustSwapper {
 	struct FeeStructure {
 		uint256 partnerShare;
 		bool noPositiveSlippage;

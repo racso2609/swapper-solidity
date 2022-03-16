@@ -11,6 +11,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 
 contract SwapperV1 is Initializable, AccessControlUpgradeable {
 	using SafeMath for uint256;
+	event Swap(address user, uint256 amount);
 
 	IUniswapV2Router02 public uniSwapRouter;
 	uint24 public poolFee;
@@ -82,6 +83,8 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 			msg.sender,
 			block.timestamp + deadline
 		);
+
+		emit Swap(msg.sender, _ethValue);
 	}
 
 	function singleSwap(address _tokenOut) public payable correctEthValue {
