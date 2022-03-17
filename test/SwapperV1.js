@@ -12,9 +12,10 @@ const {
 describe("Swapper v1", () => {
 	beforeEach(async () => {
 		({ deployer, user, feeRecipient } = await getNamedAccounts());
+
 		await fixture(["V1"]);
-		swapperV1 = await ethers.getContract("SwapperV1");
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
+		swapperV1 = await ethers.getContract("SwapperV1");
 	});
 
 	describe("basic config", () => {
@@ -46,18 +47,19 @@ describe("Swapper v1", () => {
 			const recipientPreBalance = await feeRecipientSigner.provider.getBalance(
 				feeRecipient
 			);
+
 			const tx = await swapperV1.singleSwap(DAI_ADDRESS, {
 				value: ethers.utils.parseEther("1"),
 			});
 			await printGas(tx);
-			const balance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
-				userAddress: deployer,
-			});
 
 			const recipientPostBalance = await feeRecipientSigner.provider.getBalance(
 				feeRecipient
 			);
+			const balance = await balanceOf({
+				tokenAddress: DAI_ADDRESS,
+				userAddress: deployer,
+			});
 
 			expect(balance).to.be.gt(0);
 			expect(recipientPostBalance).to.be.gt(recipientPreBalance);

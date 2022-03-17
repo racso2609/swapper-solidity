@@ -301,6 +301,7 @@ async function balanceOf({ tokenAddress, userAddress }) {
 	const signer = await ethers.provider.getSigner(userAddress);
 
 	const tokenContract = new ethers.Contract(tokenAddress, abi, signer.provider);
+	// console.log(tokenContract);
 	const balanceOf = await tokenContract.connect(signer).balanceOf(userAddress);
 
 	return balanceOf;

@@ -6,7 +6,6 @@ const {
 	DAI_ADDRESS,
 	ETH_ADDRESS,
 	balanceOf,
-	ALBT_ADDRESS,
 	// AUGUST,
 	UNISWAP,
 } = require("../utils/tokens");
@@ -19,7 +18,7 @@ const getTransactionMultipleData = async ({
 	const transactionsHashes = distribution.map((distribution) => {
 		return getTransactionData({
 			fromToken: ETH_ADDRESS,
-			toToken: ALBT_ADDRESS,
+			toToken: DAI_ADDRESS,
 			amount: (totalAmount * distribution) / 100,
 			fromDecimals: 18,
 			toDecimals: 18,
@@ -58,7 +57,7 @@ describe("swapper v2", () => {
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
 		transactionResponse = await getTransactionData({
 			fromToken: ETH_ADDRESS,
-			toToken: ALBT_ADDRESS,
+			toToken: DAI_ADDRESS,
 			amount: ethers.utils.parseEther("1").toString(),
 			fromDecimals: 18,
 			toDecimals: 18,
@@ -69,7 +68,7 @@ describe("swapper v2", () => {
 	describe("smart swap", () => {
 		it("swap", async () => {
 			const preBalance = await balanceOf({
-				tokenAddress: ALBT_ADDRESS,
+				tokenAddress: DAI_ADDRESS,
 				userAddress: existingAddress,
 			});
 
@@ -85,7 +84,7 @@ describe("swapper v2", () => {
 			await printGas(tx);
 
 			const postBalance = await balanceOf({
-				tokenAddress: ALBT_ADDRESS,
+				tokenAddress: DAI_ADDRESS,
 				userAddress: existingAddress,
 			});
 			expect(postBalance).to.be.gt(preBalance);
@@ -113,7 +112,7 @@ describe("swapper v2", () => {
 			await printGas(tx);
 
 			const postBalance = await balanceOf({
-				tokenAddress: ALBT_ADDRESS,
+				tokenAddress: DAI_ADDRESS,
 				userAddress: existingAddress,
 			});
 			expect(postBalance).to.be.gt(preBalance);
