@@ -281,6 +281,9 @@ const abi = [
 		type: "function",
 	},
 ];
+
+const networkId = process.env.NETWORKID;
+
 async function allowance({
 	tokenAddress,
 	contractAddress,
@@ -326,20 +329,65 @@ async function impersonateTokens({
 	await tx.wait();
 }
 
-const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-
-const ALBT_ADDRESS = "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0";
-const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const UNISWAP = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const AUGUST = "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57";
 
+function getToken(symbol) {
+	const token = tokens[networkId]?.find((t) => t.symbol === symbol);
+
+	if (!token)
+		throw new Error(`Token ${symbol} not available on network ${networkID}`);
+	return token;
+}
+
+const tokens = {
+	[1]: [
+		{
+			decimals: 18,
+			symbol: "ETH",
+			address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+		},
+		{
+			decimals: 6,
+			symbol: "USDC",
+			address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+		},
+		{
+			decimals: 18,
+			symbol: "DAI",
+			address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+		},
+		{
+			decimals: 18,
+			symbol: "ALBT",
+			address: "0x00a8b738E453fFd858a7edf03bcCfe20412f0Eb0",
+		},
+	],
+	[137]: [
+		{
+			decimals: 18,
+			symbol: "MATIC",
+			address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+		},
+		{
+			decimals: 8,
+			symbol: "WBTC",
+			address: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6",
+		},
+		{
+			decimals: 18,
+			symbol: "WETH",
+			address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+		},
+	],
+};
+
 module.exports = {
-	DAI_ADDRESS,
 	allowance,
 	balanceOf,
 	impersonateTokens,
-	ALBT_ADDRESS,
-	ETH_ADDRESS,
 	AUGUST,
 	UNISWAP,
+	tokens,
+	getToken,
 };

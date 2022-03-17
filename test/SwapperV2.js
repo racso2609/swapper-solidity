@@ -1,46 +1,14 @@
 const { expect } = require("chai");
 // const { fixture } = deployments;
-const { printGas } = require("../utils/transactions");
+const { printGas, toWei } = require("../utils/transactions");
 const { getTransactionData } = require("../utils/paraswap");
-const {
-	DAI_ADDRESS,
-	ETH_ADDRESS,
-	balanceOf,
-	// AUGUST,
-	UNISWAP,
-} = require("../utils/tokens");
-
-const getTransactionMultipleData = async ({
-	totalAmount,
-	distribution,
-	sender,
-}) => {
-	const transactionsHashes = distribution.map((distribution) => {
-		return getTransactionData({
-			fromToken: ETH_ADDRESS,
-			toToken: DAI_ADDRESS,
-			amount: (totalAmount * distribution) / 100,
-			fromDecimals: 18,
-			toDecimals: 18,
-			sender,
-			deadline: Math.floor(Date.now / 1000) + 30 * 60 * 60,
-		});
-	});
-	const txs = await Promise.all(transactionsHashes);
-	const hashes = txs.map((tx) => tx?.data?.data);
-	const amount = txs.map((tx) =>
-		ethers.BigNumber.from(tx?.priceData?.srcAmount)
-	);
-
-	return { hashes, totalAmount: amount };
-};
+const { balanceOf, UNISWAP, getToken } = require("../utils/tokens");
 
 describe("swapper v2", () => {
 	beforeEach(async () => {
 		({ deployer, user, feeRecipient } = await getNamedAccounts());
 		const SwapperV2 = await ethers.getContractFactory("SwapperV2");
 		const SwapperV1 = await ethers.getContractFactory("SwapperV1");
-
 		swapperV1 = await upgrades.deployProxy(SwapperV1, [
 			feeRecipient,
 			UNISWAP,
@@ -48,74 +16,92 @@ describe("swapper v2", () => {
 		]);
 		swapperV2 = await upgrades.upgradeProxy(swapperV1.address, SwapperV2);
 
-		existingAddress = "0x7879a0c239f33db9160a8036db0e082616ca8690";
-		await hre.network.provider.request({
-			method: "hardhat_impersonateAccount",
-			params: [existingAddress],
-		});
+		DAI_TOKEN = getToken("DAI");
+		ETH_TOKEN = getToken("ETH");
+		ALBT_TOKEN = getToken("ALBT");
+		swapAmount = toWei(1);
 
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
-		transactionResponse = await getTransactionData({
-			fromToken: ETH_ADDRESS,
-			toToken: DAI_ADDRESS,
-			amount: ethers.utils.parseEther("1").toString(),
-			fromDecimals: 18,
-			toDecimals: 18,
-			sender: existingAddress,
-			deadline: Math.floor(Date.now / 1000) + 30 * 60 * 60,
-		});
 	});
 	describe("smart swap", () => {
 		it("swap", async () => {
 			const preBalance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
-				userAddress: existingAddress,
+				tokenAddress: DAI_TOKEN.address,
+				userAddress: deployer,
 			});
+			const transactionResponse = await getTransactionData({
+				fromToken: ETH_TOKEN,
+				toToken: DAI_TOKEN,
+				amount: swapAmount,
+				contractAddress: swapperV2.address,
+				userAddress: deployer,
+				distribution: [100],
+			});
+			if (transactionResponse.error) throw new Error(transactionResponse.error);
 
 			const tx = await swapperV2.smartSingleSwap(
 				transactionResponse.data.data,
+				DAI_TOKEN.address,
 				{
-					value: ethers.utils.parseUnits(
-						transactionResponse.priceData.srcAmount,
-						"wei"
-					),
+					value: swapAmount,
 				}
 			);
 			await printGas(tx);
 
 			const postBalance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
-				userAddress: existingAddress,
+				tokenAddress: DAI_TOKEN.address,
+				userAddress: deployer,
 			});
 			expect(postBalance).to.be.gt(preBalance);
 		});
 		it("multi swap", async () => {
-			const totalAmount = ethers.utils.parseEther("1");
-			const distribution = [50, 50];
-			const txInfo = await getTransactionMultipleData({
-				totalAmount,
-				distribution,
-				sender: existingAddress,
-			});
-			const preBalance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
-				userAddress: existingAddress,
+			const totalAmount = 1;
+			const distributions = [50, 50];
+			const promises = distributions.map((distribution) => {
+				return getTransactionData({
+					fromToken: ETH_TOKEN,
+					toToken: DAI_TOKEN,
+					amount: toWei(Math.floor(totalAmount * distribution) / 100),
+					contractAddress: swapperV2.address,
+					userAddress: deployer,
+				});
 			});
 
+			const txInfo = await Promise.all(promises);
+
+			const hashes = txInfo.map((tx) => {
+				if (tx.error) throw new Error(tx.error);
+				return tx.data.data;
+			});
+			const preBalanceDAI = await balanceOf({
+				tokenAddress: DAI_TOKEN.address,
+				userAddress: deployer,
+			});
+
+			const preBalanceALBT = await balanceOf({
+				tokenAddress: ALBT_TOKEN.address,
+				userAddress: deployer,
+			});
+			//
 			const tx = await swapperV2.smartMultipleSwap(
-				txInfo.hashes,
-				txInfo.totalAmount,
+				hashes,
+				[DAI_TOKEN.address, ALBT_TOKEN.address],
+				distributions,
 				{
-					value: totalAmount,
+					value: toWei(2),
 				}
 			);
 			await printGas(tx);
-
-			const postBalance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
-				userAddress: existingAddress,
+			const postBalanceDAI = await balanceOf({
+				tokenAddress: DAI_TOKEN.address,
+				userAddress: deployer,
 			});
-			expect(postBalance).to.be.gt(preBalance);
+			const postBalanceALBT = await balanceOf({
+				tokenAddress: ALBT_TOKEN.address,
+				userAddress: deployer,
+			});
+			expect(postBalanceDAI).to.be.gt(preBalanceDAI);
+			expect(postBalanceALBT).to.be.gt(preBalanceALBT);
 		});
 	});
 });

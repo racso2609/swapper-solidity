@@ -1,13 +1,7 @@
 const { expect } = require("chai");
 const { fixture } = deployments;
 const { printGas } = require("../utils/transactions");
-const {
-	DAI_ADDRESS,
-	balanceOf,
-	ALBT_ADDRESS,
-	AUGUST,
-	UNISWAP,
-} = require("../utils/tokens");
+const { balanceOf, AUGUST, UNISWAP, getToken } = require("../utils/tokens");
 
 describe("Swapper v1", () => {
 	beforeEach(async () => {
@@ -16,6 +10,8 @@ describe("Swapper v1", () => {
 		await fixture(["V1"]);
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
 		swapperV1 = await ethers.getContract("SwapperV1");
+		DAI_TOKEN = getToken("DAI");
+		ALBT_TOKEN = getToken("ALBT");
 	});
 
 	describe("basic config", () => {
@@ -38,7 +34,7 @@ describe("Swapper v1", () => {
 	});
 	describe("swap eth for tokens", async () => {
 		it("swap ether for dai faail", async () => {
-			await expect(swapperV1.singleSwap(DAI_ADDRESS)).to.be.revertedWith(
+			await expect(swapperV1.singleSwap(DAI_TOKEN.address)).to.be.revertedWith(
 				"You must pass 100 eth at least!"
 			);
 		});
@@ -48,7 +44,7 @@ describe("Swapper v1", () => {
 				feeRecipient
 			);
 
-			const tx = await swapperV1.singleSwap(DAI_ADDRESS, {
+			const tx = await swapperV1.singleSwap(DAI_TOKEN.address, {
 				value: ethers.utils.parseEther("1"),
 			});
 			await printGas(tx);
@@ -57,7 +53,7 @@ describe("Swapper v1", () => {
 				feeRecipient
 			);
 			const balance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
+				tokenAddress: DAI_TOKEN.address,
 				userAddress: deployer,
 			});
 
@@ -67,7 +63,7 @@ describe("Swapper v1", () => {
 		it("swap event", async () => {
 			const value = ethers.utils.parseEther("1");
 			await expect(
-				swapperV1.singleSwap(DAI_ADDRESS, {
+				swapperV1.singleSwap(DAI_TOKEN.address, {
 					value,
 				})
 			)
@@ -78,36 +74,36 @@ describe("Swapper v1", () => {
 	describe("multi swap", () => {
 		it("fail especify distribution to each token", async () => {
 			await expect(
-				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50])
+				swapperV1.multiSwap([DAI_TOKEN.address, ALBT_TOKEN.address], [50])
 			).to.be.revertedWith("Please supply the distribution to each coin!");
 		});
 		it("fail distribution is not 100%", async () => {
 			await expect(
-				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50, 10])
+				swapperV1.multiSwap([DAI_TOKEN.address, ALBT_TOKEN.address], [50, 10])
 			).to.be.revertedWith("Incorrect distribution!");
 		});
 
 		it("fail no enought eth", async () => {
 			await expect(
-				swapperV1.multiSwap([DAI_ADDRESS, ALBT_ADDRESS], [50, 50])
+				swapperV1.multiSwap([DAI_TOKEN.address, ALBT_TOKEN.address], [50, 50])
 			).to.be.revertedWith("You must pass 100 eth at least!");
 		});
 
 		it("multi swap", async () => {
 			const tx = await swapperV1.multiSwap(
-				[DAI_ADDRESS, ALBT_ADDRESS],
+				[DAI_TOKEN.address, ALBT_TOKEN.address],
 				[50, 50],
 				{ value: ethers.utils.parseEther("1") }
 			);
 			await printGas(tx);
 
 			const ALBBalance = await balanceOf({
-				tokenAddress: ALBT_ADDRESS,
+				tokenAddress: ALBT_TOKEN.address,
 				userAddress: deployer,
 			});
 
 			const DAIBalance = await balanceOf({
-				tokenAddress: DAI_ADDRESS,
+				tokenAddress: DAI_TOKEN.address,
 				userAddress: deployer,
 			});
 			expect(ALBBalance).to.be.gt(0);
