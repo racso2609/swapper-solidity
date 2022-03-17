@@ -42,14 +42,9 @@ contract SwapperV2 is SwapperV1 {
 	function smartMultipleSwap(
 		bytes[] memory _data,
 		uint256[] calldata _distribution
-	)
-		public
-		payable
-		correctEthValue
-		correctDistibution(_distribution, uint24(_data.length))
-	{
+	) public payable correctEthValue {
 		for (uint24 i = 0; i < _data.length; i++) {
-			_smartSwap(_data[i], _calculateFee(msg.value, _distribution[i]));
+			_smartSwap(_data[i], _distribution[i]);
 		}
 	}
 }
