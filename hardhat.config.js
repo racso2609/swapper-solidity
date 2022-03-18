@@ -20,26 +20,11 @@ let mnemonic = process.env.MNEMONIC
 module.exports = {
 	networks: {
 		hardhat: {
-			// Uncomment these lines to use mainnet fork
 			forking: {
-				url: `https:eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-				blockNumber: 14373181,
-			},
-			forking: {
-			url: "https://polygon-mainnet.g.alchemy.com/v2/3BWWZaoj2BsULjGTskrbLk4WW5cLJtKm",
-			},
-		},
-
-		rinkeby: {
-			url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-			accounts: {
-				mnemonic,
-			},
-		},
-		live: {
-			url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-			accounts: {
-				mnemonic,
+				url: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+				accounts: {
+					mnemonic,
+				},
 			},
 		},
 	},
