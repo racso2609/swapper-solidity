@@ -20,11 +20,11 @@ contract SwapperV2 is SwapperV1 {
 	function _smartSwap(
 		bytes calldata _data,
 		IERC20Upgradeable _token,
-		uint256 _ethValue
+		uint256 _value
 	) internal {
-		(bool success, bytes memory result) = augustSwapper.call{
-			value: _ethValue
-		}(_data);
+		(bool success, bytes memory result) = augustSwapper.call{ value: _value }(
+			_data
+		);
 
 		if (!success) {
 			// Next 5 lines from https://ethereum.stackexchange.com/a/83577
@@ -64,13 +64,14 @@ contract SwapperV2 is SwapperV1 {
 	function smartMultipleSwap(
 		bytes[] calldata _data,
 		IERC20Upgradeable[] calldata _tokens,
-		uint256[] calldata _distribution
+		uint256[] calldata _distributions
 	) public payable correctEthValue {
 		for (uint24 i = 0; i < _data.length; i++) {
+			console.log(_calculateFee(msg.value, _distributions[i]));
 			_smartSwap(
 				_data[i],
 				_tokens[i],
-				_calculateFee(msg.value, _distribution[i])
+				_calculateFee(msg.value, _distributions[i])
 			);
 		}
 	}

@@ -3,7 +3,7 @@ pragma solidity =0.7.0;
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
-/* import "hardhat/console.sol"; */
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
@@ -80,7 +80,7 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		internal
 		returns (uint256)
 	{
-		return _amount.mul(_porcentage).div(10000);
+		return _amount.mul(10**2).mul(_porcentage).div(10000);
 	}
 
 	/* @params _tokenOut destination token address */
@@ -128,9 +128,12 @@ contract SwapperV1 is Initializable, AccessControlUpgradeable {
 		correctDistibution(_distribution, uint24(_tokensOut.length))
 		correctEthValue
 	{
+		uint256 valueMinusFee = msg.value.sub(_calculateFee(msg.value, poolFee));
+
 		for (uint24 i = 0; i < _tokensOut.length; i++) {
-			_swap(_tokensOut[i], _calculateFee(msg.value, _distribution[i]));
+			_swap(_tokensOut[i], _calculateFee(valueMinusFee, _distribution[i]));
 		}
+		recipient.transfer(msg.value.sub(valueMinusFee));
 	}
 
 	/* @params _recipient destination token address */

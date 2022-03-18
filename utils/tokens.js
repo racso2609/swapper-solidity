@@ -329,14 +329,15 @@ async function impersonateTokens({
 	await tx.wait();
 }
 
-const UNISWAP = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+// const UNISWAP = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"; // Mainnet
+const UNISWAP = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"; //polygon
 const AUGUST = "0xDEF171Fe48CF0115B1d80b88dc8eAB59176FEe57";
 
 function getToken(symbol) {
 	const token = tokens[networkId]?.find((t) => t.symbol === symbol);
 
 	if (!token)
-		throw new Error(`Token ${symbol} not available on network ${networkID}`);
+		throw new Error(`Token ${symbol} not available on network ${networkId}`);
 	return token;
 }
 

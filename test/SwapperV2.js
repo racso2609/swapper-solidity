@@ -9,16 +9,18 @@ describe("swapper v2", () => {
 		({ deployer, user, feeRecipient } = await getNamedAccounts());
 		const SwapperV2 = await ethers.getContractFactory("SwapperV2");
 		const SwapperV1 = await ethers.getContractFactory("SwapperV1");
+
 		swapperV1 = await upgrades.deployProxy(SwapperV1, [
 			feeRecipient,
 			UNISWAP,
 			10,
 		]);
+
 		swapperV2 = await upgrades.upgradeProxy(swapperV1.address, SwapperV2);
 
-		DAI_TOKEN = getToken("DAI");
-		ETH_TOKEN = getToken("ETH");
-		ALBT_TOKEN = getToken("ALBT");
+		WBTC_TOKEN = getToken("WBTC");
+		MATIC_TOKEN = getToken("MATIC");
+		WETH_TOKEN = getToken("WETH");
 		swapAmount = toWei(1);
 
 		feeRecipientSigner = await ethers.provider.getSigner(feeRecipient);
@@ -26,12 +28,12 @@ describe("swapper v2", () => {
 	describe("smart swap", () => {
 		it("swap", async () => {
 			const preBalance = await balanceOf({
-				tokenAddress: DAI_TOKEN.address,
+				tokenAddress: WBTC_TOKEN.address,
 				userAddress: deployer,
 			});
 			const transactionResponse = await getTransactionData({
-				fromToken: ETH_TOKEN,
-				toToken: DAI_TOKEN,
+				fromToken: MATIC_TOKEN,
+				toToken: WBTC_TOKEN,
 				amount: swapAmount,
 				contractAddress: swapperV2.address,
 				userAddress: deployer,
@@ -41,7 +43,7 @@ describe("swapper v2", () => {
 
 			const tx = await swapperV2.smartSingleSwap(
 				transactionResponse.data.data,
-				DAI_TOKEN.address,
+				WBTC_TOKEN.address,
 				{
 					value: swapAmount,
 				}
@@ -49,7 +51,7 @@ describe("swapper v2", () => {
 			await printGas(tx);
 
 			const postBalance = await balanceOf({
-				tokenAddress: DAI_TOKEN.address,
+				tokenAddress: WBTC_TOKEN.address,
 				userAddress: deployer,
 			});
 			expect(postBalance).to.be.gt(preBalance);
@@ -57,11 +59,14 @@ describe("swapper v2", () => {
 		it("multi swap", async () => {
 			const totalAmount = 1;
 			const distributions = [50, 50];
-			const promises = distributions.map((distribution) => {
+			const tokens = [WBTC_TOKEN, WETH_TOKEN];
+			const promises = distributions.map((distribution, index) => {
 				return getTransactionData({
-					fromToken: ETH_TOKEN,
-					toToken: DAI_TOKEN,
-					amount: toWei(Math.floor(totalAmount * distribution) / 100),
+					fromToken: MATIC_TOKEN,
+					toToken: tokens[index],
+					amount: toWei(
+						Math.floor(totalAmount * distribution) / 100
+					).toString(),
 					contractAddress: swapperV2.address,
 					userAddress: deployer,
 				});
@@ -73,35 +78,35 @@ describe("swapper v2", () => {
 				if (tx.error) throw new Error(tx.error);
 				return tx.data.data;
 			});
-			const preBalanceDAI = await balanceOf({
-				tokenAddress: DAI_TOKEN.address,
+
+			const preBalanceWBTC = await balanceOf({
+				tokenAddress: WBTC_TOKEN.address,
 				userAddress: deployer,
 			});
 
-			const preBalanceALBT = await balanceOf({
-				tokenAddress: ALBT_TOKEN.address,
+			const preBalanceWETH = await balanceOf({
+				tokenAddress: WETH_TOKEN.address,
 				userAddress: deployer,
 			});
-			//
 			const tx = await swapperV2.smartMultipleSwap(
 				hashes,
-				[DAI_TOKEN.address, ALBT_TOKEN.address],
+				tokens.map((token) => token.address),
 				distributions,
 				{
-					value: toWei(2),
+					value: ethers.utils.parseEther("1"),
 				}
 			);
 			await printGas(tx);
-			const postBalanceDAI = await balanceOf({
-				tokenAddress: DAI_TOKEN.address,
+			const postBalanceWBTC = await balanceOf({
+				tokenAddress: WBTC_TOKEN.address,
 				userAddress: deployer,
 			});
-			const postBalanceALBT = await balanceOf({
-				tokenAddress: ALBT_TOKEN.address,
+			const postBalanceWETH = await balanceOf({
+				tokenAddress: WETH_TOKEN.address,
 				userAddress: deployer,
 			});
-			expect(postBalanceDAI).to.be.gt(preBalanceDAI);
-			expect(postBalanceALBT).to.be.gt(preBalanceALBT);
+			expect(postBalanceWBTC).to.be.gt(preBalanceWBTC);
+			expect(postBalanceWETH).to.be.gt(preBalanceWETH);
 		});
 	});
 });
